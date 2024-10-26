@@ -1,0 +1,266 @@
+---
+title: "Data 710 Assignment 1 MD Fardin"
+author: "MD Fardin"
+date: "`r Sys.Date()`"
+output:
+  html_document: default
+  word_document: default
+---
+
+## **NYC Wi-Fi Hotspot Locations, as of 2022**
+
+MD Fardin
+
+Professor Cohen
+
+DATA 710
+
+NYC OpenData Project
+
+9/25/2024
+
+### **Introduction:**
+
+WiFi is an essential part of our daily lives. We need it to communicate, work, travel, and plethora of other things. As of 2024, [out of nearly 8 billion people in the world, 5.35 billion have access to the internet](https://www.forbes.com/home-improvement/internet/internet-statistics/#:~:text=Out%20of%20the%20nearly%208,the%20internet%2C%20according%20to%20Statista.). New York City offers a vast network of free public Wi-Fi hotspots across the five boroughs providing residents and visitors with convenient internet access. These hotspots are located in parks, subways, and public spaces. These hotspots aims to enhance connectivity throughout the city.
+
+### **Objective:**
+
+The main objectives of this report are:
+
+1.  To analyze how many overall hotspots locations are there in the City of New York as of 2022 and how many of the hotspot locations are free in NYC and Queens.
+
+2.  To identify and compare how many hotspots are located in each borough to the population.
+
+3.  To identify which borough has the most hotspot locations that's free and compare it to the population of each borough.
+
+### **Data:**
+
+The analysis uses the [NYC Wi-Fi Hotspot Locations](https://data.cityofnewyork.us/City-Government/NYC-Wi-Fi-Hotspot-Locations/yjub-udmw/about_data) dataset from NYC OpenData website. This dataset was provided by the Office of Technology and Innovations (OTI) in 2015 and last updated in 2022. The analysis will focus on the boroughs, and whether or not the Wi-Fi location is free.
+
+The population data for the City of New York was obtained from [citypopulation.de](https://www.citypopulation.de/en/usa/newyorkcity/) and manually entered into R as a data frame.
+
+### **Analysis:**
+
+#### **Analytical Techniques:**
+
+Microsoft Excel was used to understand the dataset. Then R programming was used to find out discrete variables, and to examine and interpret the univariate distribution of two variables in the dataset and examine and interpret the bivariate distribution of those variables. I manually entered the data of the NYC population as a data frame.
+
+```{r include=FALSE}
+# Clear R's Memory
+rm(list = ls())
+gc()
+```
+
+```{r, include=FALSE}
+# Setting the Working Directory
+setwd("D:/Graduate School Files/Data 710 -  Basic Analytics/Data 710 Assignment 1 NYC OpenData/Submit")
+```
+
+```{r, include=FALSE}
+# Load Packages
+library(readxl)
+library(ggplot2)
+library(dplyr)
+library(sf)
+library(tidyverse)
+library(descr) 
+library(leaflet)
+```
+
+```{r, include=FALSE}
+# Create an object called "nycwifi" with the first sheet of the Excel file
+nycwifi <- read_xlsx("NYC_Wi-Fi_Hotspot_Locations_.xlsx")
+```
+
+```{r, include=FALSE}
+# Use head to check the first few rows of the data
+head(nycwifi)
+```
+
+```{r, include=FALSE}
+# Use summary to look at the summary of the data
+summary(nycwifi)
+```
+
+```{r, include=FALSE}
+# Checking all the variables
+names(nycwifi)
+```
+
+```{r, include=FALSE}
+# I want to change the variables "Location_T" to "Location Type", "Neighborhood Tabulation Area (NTA)" to Neighborhood, and "Postcode" to "Zip Code"
+names(nycwifi)[c(11, 20, 22)] <- paste(c("Location Type", "Neighborhood", "Zip Code"))
+```
+
+```{r, include=FALSE}
+# Not all variables are needed from the data, so I want a new table with the variables I need for this analysis
+nycwifi2 <- nycwifi[, c("OBJECTID", "Type", "Provider", "Latitude", "Longitude", "Location Type", "City", "Borough Name", "Neighborhood", "Council Distrcit", "Zip Code")]
+
+nycwifi2
+```
+
+#### **Univariate Distribution:**
+
+A univariate distribution analysis involves a single variables distribution. This is used to check for rarity or numerous. For this analysis, I will examine and analyze the univariate distribution of the variables "Type" and "Borough Name" in the dataset to search for the quantity of hotspots sites in New York City, and the price and compare it to the population of each borough respectively.
+
+#### **New York City Population:**
+
+There is an estimate of [8,258,035 people in 2022](https://www.citypopulation.de/en/usa/newyorkcity/).
+
+```{r, include=FALSE}
+# Let's insert the population of each Borough and NYC
+nyc_pop <- data.frame(
+  Places = c("NYC", "Manhattan", "Brooklyn", "Queens", "Bronx", "Staten Island"),
+  Population = c(8258035, 1597451, 2561225, 2252196, 1356476, 490687)
+)
+
+nyc_pop
+```
+
+#### **1. To analyze how many overall hotspots locations are there in the City of New York as of 2022 and how many of the hotspot locations are free in NYC and Queens:**
+
+There are 3,319 rows in this data and according to [NYC OpenData website](https://data.cityofnewyork.us/City-Government/NYC-Wi-Fi-Hotspot-Locations/yjub-udmw/about_data), each row represents a WiFi Hotspot location. So there are 3,319 NYC WiFi Hotspot locations throughout the city.
+
+So this would mean that for every 2,488 people, there is 1 Wi-Fi hotspot site.
+
+```{r, include=FALSE}
+# How many NYC WiFI Hotspots are there?
+NYC_Total <- nrow(nycwifi2)
+```
+
+```{r, include=FALSE}
+# Calculate how many people per hotspot site
+nyc_pop$Population[1]/NYC_Total
+```
+
+With over 3,000 WiFi Hotspot locations, 2,736 free Wi-Fi locations and 581 limited free locations. While taking into account the population of New York City, there is 1 free Wi-Fi hotspot site for every 3,018 people and 1 limited free Wi-fi hotspot for every 15,942 people.
+
+[A limited free Wi-Fi service](https://data.cityofnewyork.us/City-Government/NYC-Wi-Fi-Hotspot-Locations/yjub-udmw/about_data) gives users a cable connection for three free ten minute sessions every thirty days or purchase a 99 cent day pass that runs through midnight.
+
+To further analyze the data, I chose the borough of Queens to see for how many people, there is one hotspot site. In my analysis, I found that there are 379 free sites in Queens. Since the population for Queens in 2022 was 2,252,196; there would be 1 Free Wi-Fi hotspot site for every 5,942 people.
+
+```{r, include=FALSE}
+# To examine how many Wi-Fi hotspot locations are free/limited free
+Cost <- freq(nycwifi2$Type)
+
+# Print Cost
+Cost
+```
+
+```{r, include=FALSE}
+# Calculate how many people per free hotspot site in NYC
+8258035/2736
+
+# Calculate how many people per limited free hotspot site in NYC
+8258035/518
+```
+
+```{r, include=FALSE}
+# To see free sites in Queens
+queens_data <- nycwifi2[nycwifi2$`Borough Name` == "Queens", ]
+
+# Get the frequency of the 'Type' column
+queens_free <- table(queens_data$Type)
+
+# Print the frequency
+queens_free
+```
+
+```{r, include=FALSE}
+# Calculate how many people per free hotspot site in Queens
+2252196/379
+```
+
+#### **2. To identify and compare how many hotspots are located in each borough to the population:**
+
+My Analysis showed that there are 1,672 WiFi Hotspot locations in Manhattan, 700 in Brooklyn, 531 in Queens, 316 in the Bronx, and 100 in Staten Island. Manhattan has almost more than double the WiFi Hotspot locations in Brooklyn and over 1,500 more than Staten Island.
+
+In comparison to the population of each boroughs respectively, there is no trend in more population getting more hotspot locations. Manhattan has the most Wi-Fi hotspot locations but has the third most population. While Brooklyn has the highest population but second most hotspot locations. However, there is a trend with the Bronx and Staten Island. Both these boroughs rank fourth and fifth respectively in hotspot location and overall population.
+
+```{r, include=FALSE}
+# How many NYC WiFi Hotspots are in each borough
+boroughs <- freq(nycwifi2$`Borough Name`)
+
+# Print boroughs
+boroughs
+```
+
+```{r, include=FALSE}
+# A map visual of how many hotspots there are in NYC. Numeric values are better to understand, but the map is for aesthetic purposes
+leaflet(nycwifi) %>%
+  addTiles() %>%
+  addCircleMarkers(
+    ~Longitude, ~Latitude,
+    popup = ~paste("Name:", Name, "<br>",
+                   "Provider:", Provider, "<br>",
+                   "Type:", Type, "<br>",
+                   "Location:", Location),
+    radius = 5, color = "red", stroke = FALSE, fillOpacity = 0.5
+  ) %>%
+  setView(lng = -74, lat = 40.7128, zoom = 12)
+```
+
+#### **Bivariate:**
+
+A bivariate distribution analysis examines the relationship between two variables. For this analysis, I will examine and analyze the bivariate distribution of the variables "Type" and "Borough Name" in the dataset to search for the quantity of hotspots sites that are free in New York City and its boroughs.
+
+#### **3. To identify which borough has the most hotspot locations that's free and compare it to the population of each borough:**
+
+There are 1,573 free sites in Manhattan, 540 in Brooklyn, 379 in Queens, 196 in the Bronx, and 48 in Staten Island. While there are 97 limited free sites in Manhattan, 160 in Brooklyn, 152 in Queens, 120 in the Bronx, and 52 in Staten Island. And there are 2 partner sites which are located in Manhattan.
+
+Compared to the population of the respective, we saw before that there would be 1 Free Wi-Fi hotspot site for every 5,942 people. For the other four boroughs, the ratio is 1,015 to 1 in Manhattan, 4,743 to 1 in Brooklyn, 6,921 to 1 in the Bronx, 10,223 to 1 in Staten Island.
+
+```{r, include=FALSE}
+# How many NYC Hotsports in each borough thats free
+table(nycwifi2$`Borough Name`, nycwifi2$Type)
+```
+
+```{r, include=FALSE}
+# Manhattan comparison
+1597451/1573 
+
+# Brooklyn comparison
+2561225/540
+
+# Bronx comparison
+1356476/196
+
+# Staten Island comparison
+490687/48
+```
+
+#### **Results:**
+
+The key finding from this analysis are:
+
+1.  There are 3,319 Wi-Fi Hotspot locations throughout NYC with a ratio of 2,488 people to 1 Wi-Fi hotspot site. Of the 3,319 locations, 2,736 are free Wi-Fi locations, 581 limited free locations and 2 partnered sites. The ratio of free Wi-Fi locations to the population is 3,018 to 1 and limited free is 15,942 to 1.
+
+2.  Wi-Fi Hotspot Locations in each boroughs:
+
+    1.  Manhattan: 1,672
+    2.  Brooklyn: 700
+    3.  Queens: 531
+    4.  Bronx: 316
+    5.  Staten Island: 100
+
+    There is no trend when comparing to the respective population of the boroughs, but Bronx and Staten Island come in 4th and 5th respectively for population and Wi-Fi locations.
+
+3.  Free Wi-Fi Hotspot Locations in each boroughs:
+
+    1.  Manhattan: 1,573
+    2.  Brooklyn: 540
+    3.  Queens: 379
+    4.  Bronx: 196
+    5.  Staten Island: 48
+
+    The ratio of population to Wi-Fi location being 1,015 to 1 in Manhattan, 4,743 to 1 in Brooklyn, 5,942 to 1 in Queens, 6,921 to 1 in the Bronx, 10,223 to 1 in Staten Island.
+
+#### **Discussion:**
+
+The likely reason for Manhattan having more Wi-Fi Hotspot location can be because it in the [business capital of the world](https://www.investopedia.com/articles/investing/091114/worlds-top-financial-cities.asp#:~:text=Tokyo%2C%20and%20Chicago.-,New%20York%20City,the%20world's%20preeminent%20financial%20center.) and having people visit from many parts of the world for work, travel and school. That's why it in crucial to have more access to internet there than other, more residential areas of New York City.
+
+#### **Conclusion:**
+
+This analysis of Wi-Fi hotspot locations across New York City reveals significant disparities in accessibility among the boroughs. With a total of 3,319 Wi-Fi hotspots, Manhattan stands out with the highest concentration, reflecting its role as a global business hub. In contrast, the ratios of free Wi-Fi hotspots to population indicate that areas like the Bronx and Staten Island, while ranking lower in hotspot availability and population, still face challenges in providing adequate internet access to their residents.
+
+Despite the considerable number of free Wi-Fi locations, the analysis highlights that population density does not necessarily correlate with hotspot availability. The findings suggest that addressing the digital divide requires targeted efforts to enhance internet access in underrepresented boroughs. I feel as the demand for reliable internet continues to grow, especially in an increasingly digital world, it is essential for policymakers and city planners to prioritize the equitable distribution of Wi-Fi resources across all boroughs to support the diverse needs of New York City's population.
